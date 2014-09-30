@@ -9,6 +9,14 @@ import sys
 from stf import STF
 
 class MFCC:
+    '''
+    MFCC computation from spectrum information
+
+    Reference
+    ---------
+     - http://aidiary.hatenablog.com/entry/20120225/1330179868
+    '''
+
     def __init__(self, nfft, frequency, dimension = 32):
         self.nfft = nfft
         self.frequency = frequency
