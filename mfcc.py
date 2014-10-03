@@ -17,7 +17,7 @@ class MFCC:
      - http://aidiary.hatenablog.com/entry/20120225/1330179868
     '''
 
-    def __init__(self, nfft, frequency, dimension = 32):
+    def __init__(self, nfft, frequency, dimension = 16):
         self.nfft = nfft
         self.frequency = frequency
         self.dimension = dimension
@@ -61,6 +61,23 @@ class MFCC:
     def mfcc(self, spectrum):
         mspectrum = numpy.log10(numpy.dot(spectrum, self.filterbank.transpose()))
         return scipy.fftpack.dct(mspectrum, norm = 'ortho')
+
+    def delta(self, mfcc, frame = 5):
+        assert frame % 2 == 1
+
+        shift = frame / 2
+        x = numpy.array([(1, i) for i in xrange(frame)])
+        mfcc = numpy.concatenate([[mfcc[0]] * shift, mfcc, [mfcc[-1]] * shift])
+
+        delta = None
+        for i in xrange(shift, mfcc.shape[0] - shift):
+            solution, residuals, rank, s = numpy.linalg.lstsq(x, mfcc[i - shift: i + shift + 1])
+            if delta is None:
+                delta = solution[1]
+            else:
+                delta = numpy.vstack([delta, solution[1]])
+
+        return delta
 
     def imfcc(self, mfcc):
         mspectrum = scipy.fftpack.idct(mfcc, norm = 'ortho')

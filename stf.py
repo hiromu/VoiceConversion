@@ -66,7 +66,7 @@ class STF:
         stf_file.write(struct.pack(self.endian + 'I', len(''.join(self.chunks))) + ''.join(self.chunks))
 
         for c in self.chunks:
-            if self.__dict__[c.strip()] == None:
+            if self.__dict__[c.strip()] is None:
                 continue
 
             matrix = self.__dict__[c.strip()]
