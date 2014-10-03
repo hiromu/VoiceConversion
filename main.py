@@ -11,7 +11,7 @@ from gmmmap import GMMMap, TrajectoryGMMMap
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print 'Usage: %s [source] [target] [output]' % sys.argv[0]
+        print 'Usage: %s [source] [target] [input] [output]' % sys.argv[0]
         sys.exit()
 
     source = STF()
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency)
     source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
 
-    dtw = DTW(source_mfcc, target_mfcc, window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]))
+    dtw = DTW(source_mfcc, target_mfcc, window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]) * 2)
     warp_mfcc = dtw.align(source_mfcc)
 
     target_data = numpy.hstack([target_mfcc, target_delta])
@@ -41,9 +41,16 @@ if __name__ == '__main__':
     gv_gmm.fit(gv)
 
     gmmmap = TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm)
-    output_mfcc = gmmmap.convert(warp_data)
 
+    input = STF()
+    input.loadfile(sys.argv[3])
+
+    mfcc = MFCC(input.SPEC.shape[1] * 2, input.frequency)
+    input_mfcc = numpy.array([mfcc.mfcc(input.SPEC[frame]) for frame in xrange(input.SPEC.shape[0])])
+    input_data = numpy.hstack([input_mfcc, mfcc.delta(input_mfcc)])
+
+    output_mfcc = gmmmap.convert(input_data)
     output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) for frame in xrange(output_mfcc.shape[0])])
-    target.SPEC = output_spec
+    input.SPEC = output_spec
 
-    target.savefile(sys.argv[3])
+    input.savefile(sys.argv[4])
