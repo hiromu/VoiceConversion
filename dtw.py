@@ -6,9 +6,11 @@ import scipy.linalg
 import sys
 
 class DTW:
+    @staticmethod
     def cosine(A, B):
         return scipy.dot(A, B.transpose()) / scipy.linalg.norm(A) / scipy.linalg.norm(B)
 
+    @staticmethod
     def euclidean(A, B):
         return scipy.linalg.norm(A - B)
 
@@ -20,7 +22,7 @@ class DTW:
         if distance:
             self.distance = distance
         else:
-            self.distance = DTW.euclidean
+            self.distance = self.euclidean
 
         self.dtw()
 
