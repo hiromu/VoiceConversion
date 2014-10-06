@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     color = 'rgb'
     hatch = ['.', '/', 'x']
-    legend = [u'開始', u'全体', u'末尾']
+    legend = [u'先頭', u'全体', u'末尾']
 
     label = [u'F0 (Hz)', u'ΔF0', u'Aperiodic component (Hz)', u'Aperiodic component (exponent)']
     location = ['upper right', 'lower left', 'upper left', 'upper left']
