@@ -73,7 +73,7 @@ if __name__ == '__main__':
     base_dir = sys.argv[1]
     num = int(sys.argv[2])
 
-    color = 'rgb'
+    color = ['#57B196', '#FFD25A', '#FF837B']
     hatch = ['.', '/', 'x']
     legend = [u'先頭', u'全体', u'末尾']
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     for i in xrange(4):
         for j in xrange(3):
             for k in xrange(3):
-                pylab.bar(j * 4 + k + 0.5, results[j][i][k], color = color[j], hatch = hatch[k])
+                pylab.bar(j * 4 + k + 0.5, results[j][i][k], edgecolor = '#362F3C', facecolor = color[j], hatch = hatch[k])
 
         pylab.xticks(xrange(2, 11, 4), ['A', 'B', 'C'])
         pylab.ylabel(label[i])
