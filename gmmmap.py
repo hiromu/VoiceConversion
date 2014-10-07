@@ -91,7 +91,7 @@ class GMMMap:
         if swap:
             self.tgt_means, self.src_means = self.src_means, self.tgt_means
             self.covarYY, self.covarXX = self.covarXX, self.covarYY
-            self.covarYX, self.covarXY = self.XY, self.covarYX
+            self.covarYX, self.covarXY = self.covarXY, self.covarYX
 
         # Compute D eq.(12) in [Toda 2007]
         self.D = np.zeros(self.num_mixtures*D*D).reshape(self.num_mixtures, D, D)
