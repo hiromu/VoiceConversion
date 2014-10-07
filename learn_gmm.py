@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import numpy
 import pickle
 import sklearn
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     gv_gmm = sklearn.mixture.GMM(covariance_type = 'full')
     gv_gmm.fit(gv)
 
-    gmmmap = TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm)
+    gmmmap = (TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm), TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm, swap = True))
 
     output = open(sys.argv[3], 'wb')
     pickle.dump(gmmmap, output)
