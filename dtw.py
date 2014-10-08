@@ -51,7 +51,7 @@ class DTW:
 
         self.path.append((0, 0))
 
-    def align(self, source, reverse = False):
+    def align(self, data, reverse = False):
         if reverse:
             path = [(t[1], t[0]) for t in self.path]
             source = self.target
@@ -63,7 +63,7 @@ class DTW:
 
         path.sort(key = lambda x: (x[1], x[0]))
 
-        shape = tuple([path[-1][1] + 1] + list(source.shape[1:]))
+        shape = tuple([path[-1][1] + 1] + list(data.shape[1:]))
         alignment = numpy.ndarray(shape)
 
         idx = 0
@@ -73,7 +73,7 @@ class DTW:
         while idx < len(path) and frame < target.shape[0]:
             if path[idx][1] > frame:
                 candicates.sort(key = lambda x: self.distance(source[x], target[frame]))
-                alignment[frame] = source[candicates[0]]
+                alignment[frame] = data[candicates[0]]
 
                 candicates = [path[idx][0]]
                 frame += 1
@@ -83,7 +83,7 @@ class DTW:
 
         if frame < target.shape[0]:
             candicates.sort(key = lambda x: self.distance(source[x], target[frame]))
-            alignment[frame] = source[candicates[0]]
+            alignment[frame] = data[candicates[0]]
 
         return alignment
 
