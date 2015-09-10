@@ -6,9 +6,9 @@ import struct
 import sys
 
 class STF:
-    def __init__(self):
+    def __init__(self, filename = None):
         self.endian = '>'
-        self.chunks = ['APSG']
+        self.chunks = ['APSG', 'F0  ', 'SPEC']
 
     def loadfile(self, filename):
         with open(filename, 'rb') as stf_file:
@@ -91,5 +91,6 @@ if __name__ == '__main__':
         print 'Usage: %s <stf_file>' % sys.argv[0]
         sys.exit()
 
-    stf = STF(sys.argv[1])
+    stf = STF()
+    stf.loadfile(sys.argv[1])
     print stf.F0

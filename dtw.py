@@ -6,12 +6,28 @@ import scipy.linalg
 import sys
 
 class DTW:
-    @staticmethod
-    def cosine(A, B):
+    def __getstate__(self): 
+        d = self.__dict__.copy()
+
+        if self.distance == self.cosine:
+            d['distance'] = 'cosine'
+        elif self.distance == self.euclidean:
+            d['distance'] = 'euclidean'
+
+        return d 
+
+    def __setstate__(self):
+        self.__dict__ = dict
+
+        if dict['distance'] == 'cosine':
+            self.distance = self.cosine
+        elif dict['distance'] == 'euclidean':
+            self.distance = self.euclidean
+
+    def cosine(self, A, B):
         return scipy.dot(A, B.transpose()) / scipy.linalg.norm(A) / scipy.linalg.norm(B)
 
-    @staticmethod
-    def euclidean(A, B):
+    def euclidean(self, A, B):
         return scipy.linalg.norm(A - B)
 
     def __init__(self, source, target, distance = None, window = sys.maxint):

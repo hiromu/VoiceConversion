@@ -2,21 +2,22 @@
 
 import math
 import numpy
+import os
 import pickle
 import sklearn
+import sklearn.mixture
 import sys
 
 from stf import STF
 from mfcc import MFCC
 from dtw import DTW
-from gmmmap import GMMMap, TrajectoryGMMMap
 
 DIMENSION = 16
 K = 32
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print 'Usage: %s [list of source stf] [list of target stf] [output file]' % sys.argv[0]
+        print 'Usage: %s [list of source stf] [list of target stf] [dtw cache directory] [output file]' % sys.argv[0]
         sys.exit()
 
     source_list = open(sys.argv[1]).read().strip().split('\n')
@@ -36,7 +37,6 @@ if __name__ == '__main__':
 
         mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = DIMENSION)
         target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
-        target_data = numpy.hstack([target_mfcc, mfcc.delta(target_mfcc)])
 
         source = STF()
         source.loadfile(source_list[i])
@@ -44,11 +44,17 @@ if __name__ == '__main__':
         mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION)
         source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
     
-        dtw = DTW(source_mfcc, target_mfcc, window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]) * 2)
-        warp_mfcc = dtw.align(source_mfcc)
-        warp_data = numpy.hstack([warp_mfcc, mfcc.delta(warp_mfcc)])
+        cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % tuple(map(lambda x: os.path.splitext(os.path.basename(x))[0], [source_list[i], target_list[i]])))
+        if os.path.exists(cache_path):
+            dtw = pickle.load(cache_path)
+        else:
+            dtw = DTW(source_mfcc, target_mfcc, window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]) * 2)
+            with open(cache_path, 'wb') as output:
+                pickle.dump(dtw, output)
 
-        data = numpy.hstack([warp_data, target_data])
+        warp_data = dtw.align(source_mfcc)
+
+        data = numpy.hstack([warp_data, target_mfcc])
         if learn_data is None:
             learn_data = data
         else:
@@ -57,15 +63,8 @@ if __name__ == '__main__':
         square_mean = (square_mean * (learn_data.shape[0] - target_mfcc.shape[0]) + (target_mfcc ** 2).sum(axis = 0)) / learn_data.shape[0]
         mean = (mean * (learn_data.shape[0] - target_mfcc.shape[0]) + target_mfcc.sum(axis = 0)) / learn_data.shape[0]
 
-    gmm = sklearn.mixture.GMM(n_components = 32, covariance_type = 'full')
+    gmm = sklearn.mixture.GMM(n_components = K, covariance_type = 'full')
     gmm.fit(learn_data)
 
-    gv = square_mean - mean ** 2
-    gv_gmm = sklearn.mixture.GMM(covariance_type = 'full')
-    gv_gmm.fit(gv)
-
-    gmmmap = (TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm), TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm, swap = True))
-
-    output = open(sys.argv[3], 'wb')
-    pickle.dump(gmmmap, output)
-    output.close()
+    with open(sys.argv[4], 'wb') as output:
+        pickle.dump(gmm, output)

@@ -9,9 +9,6 @@ import sys
 from stf import STF
 from mfcc import MFCC
 from dtw import DTW
-from gmmmap import GMMMap, TrajectoryGMMMap
-
-DIMENSION = 16
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
@@ -43,6 +40,7 @@ if __name__ == '__main__':
     f0_deviation = [math.sqrt(f0_square_mean[i] - f0_mean[i] ** 2) for i in xrange(2)]
     f0 = (tuple(f0_mean), tuple(f0_deviation))
 
+    print f0
     output = open(sys.argv[3], 'wb')
     pickle.dump(f0, output)
     output.close()
