@@ -6,25 +6,22 @@ import pickle
 import sklearn
 import sys
 
-from scipy.stats import multivariate_normal
+from gmmmap import GMMMap
 
 from stf import STF
 from mfcc import MFCC
 from dtw import DTW
 
-from gmmmap import GMMMap, TrajectoryGMMMap
-
 K = 32
 DIMENSION = 16
-Trajectory = False
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:
-        print 'Usage: %s [gmm] [f0] [input] [output]' % sys.argv[0]
+        print 'Usage: %s [gmmmap] [f0] [input] [output]' % sys.argv[0]
         sys.exit()
 
     gmm_file = open(sys.argv[1], 'rb')
-    gmm = pickle.load(gmm_file)
+    gmmmap = pickle.load(gmm_file)
     gmm_file.close()
 
     f0_file = open(sys.argv[2], 'rb')
@@ -46,16 +43,8 @@ if __name__ == '__main__':
     mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION)
     source_data = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
 
-    if Trajectory == True:
-        gmmmap = TrajectoryGMMMap(gmm, 100)
-        output_mfcc = gmmmap.convert(source_data)
-        
-        mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION / 2)
-        output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame, :DIMENSION / 2]) for frame in xrange(output_mfcc.shape[0])])
-    else:
-        gmmmap = GMMMap(gmm)
-        output_mfcc = numpy.array([gmmmap.convert(source_data[frame])[0] for frame in xrange(source_data.shape[0])])
-        output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame, :DIMENSION]) for frame in xrange(output_mfcc.shape[0])])
+    output_mfcc = numpy.array([gmmmap.convert(source_data[frame])[0] for frame in xrange(source_data.shape[0])])
+    output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) for frame in xrange(output_mfcc.shape[0])])
 
     source.SPEC = output_spec
     source.savefile(sys.argv[4])

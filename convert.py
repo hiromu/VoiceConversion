@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     output_mfcc = convert(source_data, gmm)
     print output_mfcc.shape
-    output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame, :16]) for frame in xrange(output_mfcc.shape[0])])
+    output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame, :DIMENSION]) for frame in xrange(output_mfcc.shape[0])])
 
     source.SPEC = output_spec
     source.savefile(sys.argv[4])

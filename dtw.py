@@ -16,7 +16,7 @@ class DTW:
 
         return d 
 
-    def __setstate__(self):
+    def __setstate__(self, dict):
         self.__dict__ = dict
 
         if dict['distance'] == 'cosine':

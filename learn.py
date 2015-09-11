@@ -46,7 +46,7 @@ if __name__ == '__main__':
     
         cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % tuple(map(lambda x: os.path.splitext(os.path.basename(x))[0], [source_list[i], target_list[i]])))
         if os.path.exists(cache_path):
-            dtw = pickle.load(cache_path)
+            dtw = pickle.load(open(cache_path))
         else:
             dtw = DTW(source_mfcc, target_mfcc, window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]) * 2)
             with open(cache_path, 'wb') as output:
@@ -66,11 +66,11 @@ if __name__ == '__main__':
     gmm = sklearn.mixture.GMM(n_components = K, covariance_type = 'full')
     gmm.fit(learn_data)
 
-    gv = square_mean - mean ** 2
-    gv_gmm = sklearn.mixture.GMM(covariance_type = 'full')
-    gv_gmm.fit(gv)
+    #gv = square_mean - mean ** 2
+    #gv_gmm = sklearn.mixture.GMM(covariance_type = 'full')
+    #gv_gmm.fit(gv)
 
-    gmmmap = (TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm), TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm, swap = True))
+    #gmmmap = (TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm), TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm, swap = True))
 
     with open(sys.argv[4], 'wb') as output:
-        pickle.dump(gmmmap, output)
+        pickle.dump(gmm, output)

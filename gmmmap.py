@@ -8,7 +8,7 @@ import scipy.linalg
 import scipy.sparse
 import scipy.sparse.linalg
 
-class GMMMap:
+class GMMMap(object):
     """GMM-based frame-by-frame speech parameter mapping. 
 
     GMMMap represents a class to transform spectral features of a source
@@ -94,14 +94,14 @@ class GMMMap:
             self.covarYX, self.covarXY = self.covarXY, self.covarYX
 
         # Compute D eq.(12) in [Toda 2007]
-        self.D = np.zeros(self.num_mixtures*D*D).reshape(self.num_mixtures, D, D)
+        self.D = np.zeros(self.num_mixtures * D * D).reshape(self.num_mixtures, D, D)
         for m in range(self.num_mixtures):
             xx_inv_xy = np.linalg.solve(self.covarXX[m], self.covarXY[m])
             self.D[m] = self.covarYY[m] - np.dot(self.covarYX[m], xx_inv_xy)
 
         # p(x), which is used to compute posterior prob. for a given source
         # spectral feature in mapping stage.
-        self.px = GMM(n_components=self.num_mixtures, covariance_type="full")
+        self.px = GMM(n_components = self.num_mixtures, covariance_type = "full")
         self.px.means_ = self.src_means
         self.px.covars_ = self.covarXX
         self.px.weights_ = self.weights
@@ -127,7 +127,7 @@ class GMMMap:
         E = np.zeros((self.num_mixtures, D))
         for m in range(self.num_mixtures):
             xx = np.linalg.solve(self.covarXX[m], src - self.src_means[m])
-            E[m] = self.tgt_means[m] + self.covarYX[m].dot(xx)
+            E[m] = self.tgt_means[m] + self.covarYX[m].dot(xx.transpose())
                 
         # Eq.(9) p(m|x)
         posterior = self.px.predict_proba(np.atleast_2d(src))
@@ -163,44 +163,44 @@ class TrajectoryGMMMap(GMMMap):
         of Spectral Parameter Trajectory.
         http://isw3.naist.jp/~tomoki/Tomoki/Journals/IEEE-Nov-2007_MLVC.pdf
     """
-    def __init__(self, gmm, T, gv=None, swap=False):
-        GMMMap.__init__(self, gmm, swap)
+    def __init__(self, gmm, T, gv = None, epoch = 100, step = 1e-5, swap = False):
+        super(TrajectoryGMMMap, self).__init__(gmm, swap)
 
-        self.T = T
         # shape[1] = d(src) + d(src_delta) + d(tgt) + d(tgt_delta)
         D = gmm.means_.shape[1] / 4
 
-        ## Setup for Trajectory-based mapping
-        self.__construct_weight_matrix(T, D)
-
         ## Setup for GV post-filtering
         # It is assumed that GV is modeled as a single mixture GMM
+        self.gv = gv
         if gv != None:
             self.gv_mean = gv.means_[0]
             self.gv_covar = gv.covars_[0]
             self.Pv = np.linalg.inv(self.gv_covar)
 
+            self.epoch = epoch
+            self.step = step
+
     def __construct_weight_matrix(self, T, D):
         # Construct Weight matrix W
         # Eq.(25) ~ (28)
         for t in range(T):
-            w0 = scipy.sparse.lil_matrix((D, D*T))
-            w1 = scipy.sparse.lil_matrix((D, D*T))
-            w0[0:,t*D:(t+1)*D] = scipy.sparse.diags(np.ones(D), 0)
+            w0 = scipy.sparse.lil_matrix((D, D * T))
+            w1 = scipy.sparse.lil_matrix((D, D * T))
+            w0[0:, t * D: (t + 1) * D] = scipy.sparse.diags(np.ones(D), 0)
 
-            if t-1 >= 0:
+            if t - 1 >= 0:
                 tmp = np.zeros(D)
                 tmp.fill(-0.5)
-                w1[0:,(t-1)*D:t*D] = scipy.sparse.diags(tmp, 0)
-            if t+1 < T:
+                w1[0:, (t - 1) * D: t * D] = scipy.sparse.diags(tmp, 0)
+            if t + 1 < T:
                 tmp = np.zeros(D)
                 tmp.fill(0.5)
-                w1[0:,(t+1)*D:(t+2)*D] = scipy.sparse.diags(tmp, 0)
+                w1[0:, (t + 1) * D: (t + 2) * D] = scipy.sparse.diags(tmp, 0)
 
             W_t = scipy.sparse.vstack([w0, w1])
 
             # Slower
-            # self.W[2*D*t:2*D*(t+1),:] = W_t
+            # self.W[2 * D * t: 2 * D * (t + 1), :] = W_t
 
             if t == 0:
                 self.W = W_t
@@ -209,7 +209,21 @@ class TrajectoryGMMMap(GMMMap):
 
         self.W = scipy.sparse.csr_matrix(self.W)
 
-        assert self.W.shape == (2*D*T, D*T)
+        assert self.W.shape == (D * T * 2, D * T)
+
+    # gvgrad computes gradient of the likelihood with regard to GV.
+    def __gvgrad(self, y):
+        D, T = y.shape
+
+        gv = y.var(1)
+        mean = y.mean(1)
+
+        v = np.zeros((T, D))
+        for t in range(T):
+            # Eq.(55)
+            v[t] = -2.0 / T * self.Pv.dot(gv - self.gv_mean).dot(y[:, t] - mean)
+
+        return v.reshape(D, T)
         
     def convert(self, src):
         """
@@ -226,16 +240,14 @@ class TrajectoryGMMMap(GMMMap):
         ------
         a sequence of transformed spectral features
         """
-        T, D = src.shape[0], src.shape[1]/2
-
-        if T != self.T:
-            self.__construct_weight_matrix(T, D)
+        T, D = src.shape[0], src.shape[1] / 2
+        self.__construct_weight_matrix(T, D)
 
         # A suboptimum mixture sequence  (eq.37)
         optimum_mix = self.px.predict(src)
 
         # Compute E eq.(40)
-        self.E = np.zeros((T, 2*D))
+        self.E = np.zeros((T, D * 2))
         for t in range(T):
             m = optimum_mix[t] # estimated mixture index at time t
             xx = np.linalg.solve(self.covarXX[m], src[t] - self.src_means[m])
@@ -244,21 +256,40 @@ class TrajectoryGMMMap(GMMMap):
         self.E = self.E.flatten()
 
         # Compute D eq.(41). Note that self.D represents D^-1.
-        self.D = np.zeros((T, 2*D, 2*D))
+        self.D = np.zeros((T, D * 2, D * 2))
         for t in range(T):
             m = optimum_mix[t]
             xx_inv_xy = np.linalg.solve(self.covarXX[m], self.covarXY[m])
             # Eq. (23)
             self.D[t] = self.covarYY[m] - np.dot(self.covarYX[m], xx_inv_xy)
             self.D[t] = np.linalg.inv(self.D[t])
-        self.D = scipy.linalg.block_diag(*self.D)
-
-        # represent D as a sparse matrix
-        self.D = scipy.sparse.csr_matrix(self.D)
+        self.D = scipy.sparse.block_diag(self.D, format = 'csr')
 
         # Compute target static features
         # eq.(39)
-        covar = self.W.T.dot(self.D.dot(self.W))
-        y = scipy.sparse.linalg.spsolve(covar, self.W.T.dot(self.D.dot(self.E)),\
-                                        use_umfpack=False)
+        mutual = self.W.T.dot(self.D)
+        covar = mutual.dot(self.W)
+        mean = mutual.dot(self.E)
+        y = scipy.sparse.linalg.spsolve(covar, mean, use_umfpack = False)
+
+        if self.gv:
+            y = y.reshape((T, D))
+
+            # Better initial value based on eq. (58)
+            y_gv = np.zeros((T, D))
+            for t in range(T):
+                y_gv[t] = np.sqrt(self.gv_mean / y.var(0)) * (y[t, :] - y.mean(0)) + y.mean(0)
+            y = y_gv.transpose()
+
+            omega = 1.0 / (T * 2)
+
+            # update y based on gradient decent
+            for epoch in range(self.epoch):
+                y_delta = omega * (-covar.dot(y.flatten()) + mean.flatten()) + self.__gvgrad(y).flatten()
+
+                # Eq. (52)
+                y += self.step * y_delta.reshape((D, T))
+
+            y = y.transpose()
+
         return y.reshape((T, D))
