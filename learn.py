@@ -26,8 +26,6 @@ if __name__ == '__main__':
     assert len(source_list) == len(target_list)
 
     learn_data = None
-    square_mean = numpy.zeros(DIMENSION)
-    mean = numpy.zeros(DIMENSION)
 
     for i in xrange(len(source_list)):
         print i
@@ -59,9 +57,6 @@ if __name__ == '__main__':
             learn_data = data
         else:
             learn_data = numpy.vstack([learn_data, data])
-
-        square_mean = (square_mean * (learn_data.shape[0] - target_mfcc.shape[0]) + (target_mfcc ** 2).sum(axis = 0)) / learn_data.shape[0]
-        mean = (mean * (learn_data.shape[0] - target_mfcc.shape[0]) + target_mfcc.sum(axis = 0)) / learn_data.shape[0]
 
     gmm = sklearn.mixture.GMM(n_components = K, covariance_type = 'full')
     gmm.fit(learn_data)

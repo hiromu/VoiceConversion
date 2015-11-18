@@ -28,8 +28,6 @@ if __name__ == '__main__':
     assert len(source_list) == len(target_list)
 
     learn_data = None
-    square_mean = numpy.zeros(DIMENSION)
-    mean = numpy.zeros(DIMENSION)
 
     for i in xrange(len(source_list)):
         print i
