@@ -132,7 +132,12 @@ class TrajectoryEVGMM(EVGMM):
         T, D = source.shape[0], source.shape[1] / 2
         W = self.__construct_weight_matrix(T, D)
 
-        optimum_mix = self.px.predict(source)
+        px = GMM(n_components = M, covariance_type = 'full')
+        px.weights_ = self.weights
+        px.means_ = self.src_means
+        px.covars_ = self.covarXX
+
+        optimum_mix = px.predict(source)
 
         E = np.zeros((T, D * 2))
         for t in range(T):
@@ -148,7 +153,7 @@ class TrajectoryEVGMM(EVGMM):
             D_[t] = np.linalg.inv(self.covarYY[m] - np.dot(self.covarYX[m], xx_inv_xy))
         D_ = scipy.sparse.block_diag(D_, format = 'csr')
 
-        mutual = self.W.T.dot(D_)
+        mutual = W.T.dot(D_)
         covar = mutual.dot(W)
         mean = mutual.dot(E)
         y = scipy.sparse.linalg.spsolve(covar, mean, use_umfpack = False)
