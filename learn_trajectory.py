@@ -4,6 +4,7 @@ import math
 import numpy
 import os
 import pickle
+import re
 import sklearn
 import sklearn.mixture
 import sys
@@ -45,7 +46,7 @@ if __name__ == '__main__':
         mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION)
         source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
     
-        cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % tuple(map(lambda x: os.path.splitext(os.path.basename(x))[0], [source_list[i], target_list[i]])))
+        cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % tuple(map(lambda x: re.sub('[./]', '_', re.sub('^[./]*', '', x)), [source_list[i], target_list[i]])))
         if os.path.exists(cache_path):
             dtw = pickle.load(open(cache_path))
         else:
