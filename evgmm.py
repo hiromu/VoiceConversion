@@ -19,8 +19,6 @@ class EVGMM(object):
         initial_gmm = GMM(n_components = M, covariance_type = 'full')
         initial_gmm.fit(np.vstack(learn_data))
 
-        initial_gmm = initial_gmm
-
         self.weights = initial_gmm.weights_
         self.src_means = initial_gmm.means_[:, :D]
         self.tgt_means = initial_gmm.means_[:, D:]
@@ -32,7 +30,7 @@ class EVGMM(object):
         sv = None
 
         for i in xrange(S):
-            gmm = GMM(n_components = M, params = 'm', init_params = 'm', covariance_type = 'full')
+            gmm = GMM(n_components = M, params = 'm', init_params = '', covariance_type = 'full')
             gmm.weights_ = initial_gmm.weights_
             gmm.means_ = initial_gmm.means_
             gmm.covars_ = initial_gmm.covars_
@@ -50,7 +48,7 @@ class EVGMM(object):
         self.biasvectors = pca.mean_.reshape((M, D))
         self.means = None
 
-    def fit(self, target, epoch = 100):
+    def fit(self, target, epoch = 1000):
         py = GMM(n_components = M, covariance_type = 'full')
         py.weights_ = self.weights
         py.means_ = self.tgt_means
@@ -63,9 +61,9 @@ class EVGMM(object):
 
             left = np.sum([gamma[i] * np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, self.eigenvectors)[i]) for i in xrange(M)], axis = 0)
             right = np.sum([np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, y)[i]) for i in xrange(M)], axis = 0)
-            omega = np.linalg.solve(left, right)
+            weight = np.linalg.solve(left, right)
 
-            self.fit_means = np.dot(self.eigenvectors, omega) + self.biasvectors
+            self.fit_means = np.dot(self.eigenvectors, weight) + self.biasvectors
             py.means_ = self.fit_means
 
     def convert(self, source):
