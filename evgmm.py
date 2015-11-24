@@ -50,12 +50,15 @@ class EVGMM(object):
         self.fitted_source = self.source_means
         self.fitted_target = self.target_means
 
-        if swap:
-            self.fit = self.fit_source
-        else:
-            self.fit = self.fit_target
+        self.swap = swap
 
-    def fit_source(self, source, epoch = 1000):
+    def fit(self, data, epoch = 1000):
+        if self.swap:
+            self.fit_source(data, epoch)
+        else:
+            self.fit_target(data, epoch)
+
+    def fit_source(self, source, epoch):
         px = GMM(n_components = M, covariance_type = 'full')
         px.weights_ = self.weights
         px.means_ = self.source_means
@@ -72,7 +75,7 @@ class EVGMM(object):
             self.fitted_source = np.dot(self.eigenvectors, weight) + self.biasvectors
             py.means_ = self.fitted_source
 
-    def fit_target(self, target, epoch = 1000):
+    def fit_target(self, target, epoch):
         py = GMM(n_components = M, covariance_type = 'full')
         py.weights_ = self.weights
         py.means_ = self.target_means
