@@ -16,7 +16,7 @@ D = 16
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:
-        print 'Usage: %s [gmmmap] [f0] [source speaker stf] [target speaker stf] [output]' % sys.argv[0]
+        print 'Usage: %s [gmmmap] [f0] [source speaker stf] (target speaker stf) [output]' % sys.argv[0]
         sys.exit()
     
     with open(sys.argv[1], 'rb') as infile:
@@ -30,12 +30,15 @@ if __name__ == '__main__':
     mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = D)
     source_data = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
 
-    target = STF()
-    target.loadfile(sys.argv[4])
-    mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
-    target_data = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
+    if len(sys.argv) == 5:
+        evgmm.fit(source_data)
+    else:
+        target = STF()
+        target.loadfile(sys.argv[4])
+        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
+        target_data = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
 
-    evgmm.fit(target_data)
+        evgmm.fit(target_data)
 
     output_mfcc = numpy.array([evgmm.convert(source_data[frame])[0] for frame in xrange(source_data.shape[0])])
     output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) for frame in xrange(output_mfcc.shape[0])])
@@ -49,4 +52,8 @@ if __name__ == '__main__':
 
     source.F0 = numpy.array(f0_data)
     source.SPEC = output_spec
-    source.savefile(sys.argv[5])
+
+    if len(sys.argv) == 5:
+        source.savefile(sys.argv[4])
+    else:
+        source.savefile(sys.argv[5])

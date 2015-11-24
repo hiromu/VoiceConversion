@@ -12,7 +12,7 @@ import scipy.sparse.linalg
 M = 32
 
 class EVGMM(object):
-    def __init__(self, learn_data):
+    def __init__(self, learn_data, swap = False):
         S = len(learn_data)
         D = learn_data[0].shape[1] / 2
 
@@ -20,8 +20,8 @@ class EVGMM(object):
         initial_gmm.fit(np.vstack(learn_data))
 
         self.weights = initial_gmm.weights_
-        self.src_means = initial_gmm.means_[:, :D]
-        self.tgt_means = initial_gmm.means_[:, D:]
+        self.source_means = initial_gmm.means_[:, :D]
+        self.target_means = initial_gmm.means_[:, D:]
         self.covarXX = initial_gmm.covars_[:, :D, :D]
         self.covarXY = initial_gmm.covars_[:, :D, D:]
         self.covarYX = initial_gmm.covars_[:, D:, :D]
@@ -46,12 +46,36 @@ class EVGMM(object):
 
         self.eigenvectors = pca.components_.reshape((M, D, S))
         self.biasvectors = pca.mean_.reshape((M, D))
-        self.means = None
 
-    def fit(self, target, epoch = 1000):
+        self.fitted_source = self.source_means
+        self.fitted_target = self.target_means
+
+        if swap:
+            self.fit = self.fit_source
+        else:
+            self.fit = self.fit_target
+
+    def fit_source(self, source, epoch = 1000):
+        px = GMM(n_components = M, covariance_type = 'full')
+        px.weights_ = self.weights
+        px.means_ = self.source_means
+        px.covars_ = self.covarXX
+
+        for x in xrange(epoch):
+            predict = px.predict_proba(np.atleast_2d(source))
+            x = np.sum([predict[:, i: i + 1] * (source - self.biasvectors[i]) for i in xrange(M)], axis = 1)
+
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, self.eigenvectors)[i]) for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, x)[i]) for i in xrange(M)], axis = 0)
+            weight = np.linalg.solve(left, right)
+
+            self.fitted_source = np.dot(self.eigenvectors, weight) + self.biasvectors
+            py.means_ = self.fitted_source
+
+    def fit_target(self, target, epoch = 1000):
         py = GMM(n_components = M, covariance_type = 'full')
         py.weights_ = self.weights
-        py.means_ = self.tgt_means
+        py.means_ = self.target_means
         py.covars_ = self.covarYY
 
         for x in xrange(epoch):
@@ -63,20 +87,20 @@ class EVGMM(object):
             right = np.sum([np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, y)[i]) for i in xrange(M)], axis = 0)
             weight = np.linalg.solve(left, right)
 
-            self.fit_means = np.dot(self.eigenvectors, weight) + self.biasvectors
-            py.means_ = self.fit_means
+            self.fitted_target = np.dot(self.eigenvectors, weight) + self.biasvectors
+            py.means_ = self.fitted_target
 
     def convert(self, source):
         D = source.shape[0]
 
         E = np.zeros((M, D))
         for m in xrange(M):
-            xx = np.linalg.solve(self.covarXX[m], source - self.src_means[m])
-            E[m] = self.fit_means[m] + np.dot(self.covarYX[m], xx)
+            xx = np.linalg.solve(self.covarXX[m], source - self.fitted_source[m])
+            E[m] = self.fitted_target[m] + np.dot(self.covarYX[m], xx)
 
         px = GMM(n_components = M, covariance_type = 'full')
         px.weights_ = self.weights
-        px.means_ = self.src_means
+        px.means_ = self.source_means
         px.covars_ = self.covarXX
 
         posterior = px.predict_proba(np.atleast_2d(source))
@@ -132,7 +156,7 @@ class TrajectoryEVGMM(EVGMM):
 
         px = GMM(n_components = M, covariance_type = 'full')
         px.weights_ = self.weights
-        px.means_ = self.src_means
+        px.means_ = self.source_means
         px.covars_ = self.covarXX
 
         optimum_mix = px.predict(source)
@@ -140,8 +164,8 @@ class TrajectoryEVGMM(EVGMM):
         E = np.zeros((T, D * 2))
         for t in range(T):
             m = optimum_mix[t]
-            xx = np.linalg.solve(self.covarXX[m], source[t] - self.src_means[m])
-            E[t] = self.fit_means[m] + np.dot(self.covarYX[m], xx)
+            xx = np.linalg.solve(self.covarXX[m], source[t] - self.fitted_source[m])
+            E[t] = self.fitted_target[m] + np.dot(self.covarYX[m], xx)
         E = E.flatten()
 
         D_ = np.zeros((T, D * 2, D * 2))
