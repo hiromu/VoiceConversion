@@ -16,7 +16,7 @@ DIMENSION = 16
 K = 32
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print 'Usage: %s [list of source stf] [list of target stf] [dtw cache directory] [output file]' % sys.argv[0]
         sys.exit()
 

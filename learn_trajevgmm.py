@@ -107,7 +107,7 @@ def many_to_one(source_list, target_list, dtw_cache):
     return total_data
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print 'Usage: %s [list of source stf] [list of target] [dtw cache directory] [output file]' % sys.argv[0]
         sys.exit()
 
