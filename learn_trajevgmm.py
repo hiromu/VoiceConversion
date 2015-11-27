@@ -61,7 +61,7 @@ def one_to_many(source_list, target_list, dtw_cache):
     return total_data
 
 def many_to_one(source_list, target_list, dtw_cache):
-    target_mfcc = []
+    target_data = []
 
     for i in xrange(len(target_list)):
         target = STF()
