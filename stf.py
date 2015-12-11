@@ -8,7 +8,7 @@ import sys
 class STF:
     def __init__(self, filename = None):
         self.endian = '>'
-        self.chunks = ['AP  ', 'F0  ', 'SPEC']
+        self.chunks = ['APSG', 'F0  ', 'SPEC']
 
     def loadfile(self, filename):
         with open(filename, 'rb') as stf_file:
