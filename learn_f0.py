@@ -33,8 +33,8 @@ if __name__ == '__main__':
 
         for idx, stf in enumerate([source, target]):
             count = (stf.F0 != 0).sum()
-            f0_mean[idx] = (f0_mean[idx] * f0_count[idx] + stf.F0[stf.F0 != 0].sum()) / (f0_count[idx] + count)
-            f0_square_mean[idx] = (f0_square_mean[idx] * f0_count[idx] + (stf.F0[stf.F0 != 0] ** 2).sum()) / (f0_count[idx] + count)
+            f0_mean[idx] = (f0_mean[idx] * f0_count[idx] + numpy.log(stf.F0[stf.F0 != 0]).sum()) / (f0_count[idx] + count)
+            f0_square_mean[idx] = (f0_square_mean[idx] * f0_count[idx] + (numpy.log(stf.F0[stf.F0 != 0]) ** 2).sum()) / (f0_count[idx] + count)
             f0_count[idx] += count
 
     f0_deviation = [math.sqrt(f0_square_mean[i] - f0_mean[i] ** 2) for i in xrange(2)]

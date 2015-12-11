@@ -36,7 +36,7 @@ if __name__ == '__main__':
         if i == 0:
             f0_data.append(i)
         else:
-            f0_data.append(math.e ** ((math.log(i) - math.log(f0[0][0])) * math.log(f0[1][1]) / math.log(f0[1][0]) + math.log(f0[0][1])))
+            f0_data.append(math.e ** ((math.log(i) - f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1]))
 
     source.F0 = numpy.array(f0_data)
 
