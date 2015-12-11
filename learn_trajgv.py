@@ -9,7 +9,7 @@ import sklearn
 import sklearn.mixture
 import sys
 
-from gmmmap import TrajectoryGMMMap
+from trajectory import TrajectoryGMMMap
 
 from stf import STF
 from mfcc import MFCC
