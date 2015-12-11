@@ -17,10 +17,13 @@ class MFCC:
      - http://aidiary.hatenablog.com/entry/20120225/1330179868
     '''
 
-    def __init__(self, nfft, frequency, dimension = 16):
+    def __init__(self, nfft, frequency, dimension = 16, channels = 16):
+        assert dimension <= channels
+
         self.nfft = nfft
         self.frequency = frequency
         self.dimension = dimension
+        self.channels = channels
 
         self.fscale = numpy.fft.fftfreq(self.nfft, d = 1.0 / self.frequency)[: self.nfft / 2]
         self.filterbank, self.fcenters = self.melFilterBank()
@@ -38,16 +41,16 @@ class MFCC:
         nmax = self.nfft / 2
         df = self.frequency / self.nfft
 
-        dmel = melmax / (self.dimension + 1)
-        melcenters = numpy.arange(1, self.dimension + 1) * dmel
+        dmel = melmax / (self.channels + 1)
+        melcenters = numpy.arange(1, self.channels + 1) * dmel
         fcenters = self.mel2hz(melcenters)
 
         indexcenter = numpy.round(fcenters / df)
-        indexstart = numpy.hstack(([0], indexcenter[0: self.dimension - 1]))
-        indexstop = numpy.hstack((indexcenter[1: self.dimension], [nmax]))
+        indexstart = numpy.hstack(([0], indexcenter[0: self.channels - 1]))
+        indexstop = numpy.hstack((indexcenter[1: self.channels], [nmax]))
 
-        filterbank = numpy.zeros((self.dimension, nmax))
-        for c in numpy.arange(0, self.dimension):
+        filterbank = numpy.zeros((self.channels, nmax))
+        for c in numpy.arange(0, self.channels):
             increment = 1.0 / (indexcenter[c] - indexstart[c])
             for i in numpy.arange(indexstart[c], indexcenter[c]):
                 filterbank[c, i] = (i - indexstart[c]) * increment
@@ -60,7 +63,7 @@ class MFCC:
 
     def mfcc(self, spectrum):
         mspectrum = numpy.log10(numpy.dot(spectrum, self.filterbank.transpose()))
-        return scipy.fftpack.dct(mspectrum, norm = 'ortho')
+        return scipy.fftpack.dct(mspectrum, norm = 'ortho')[:self.dimension]
 
     def delta(self, mfcc, frame = 5):
         assert frame % 2 == 1
@@ -80,6 +83,7 @@ class MFCC:
         return delta
 
     def imfcc(self, mfcc):
+        mfcc = numpy.hstack([mfcc, [0] * (self.channels - self.dimension)])
         mspectrum = scipy.fftpack.idct(mfcc, norm = 'ortho')
         tck = scipy.interpolate.splrep(self.fcenters, numpy.power(10, mspectrum))
         return scipy.interpolate.splev(self.fscale, tck)
