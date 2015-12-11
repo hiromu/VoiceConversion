@@ -62,6 +62,7 @@ class MFCC:
         return filterbank, fcenters
 
     def mfcc(self, spectrum):
+        spectrum = numpy.maximum(numpy.zeros(spectrum.shape), spectrum)
         mspectrum = numpy.log10(numpy.dot(spectrum, self.filterbank.transpose()))
         return scipy.fftpack.dct(mspectrum, norm = 'ortho')[:self.dimension]
 
