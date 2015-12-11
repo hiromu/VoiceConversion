@@ -104,18 +104,29 @@ class DTW:
         return alignment
 
 if __name__ == '__main__':
-    A = numpy.random.rand(30) * 3 + numpy.arange(30)
-    B = numpy.random.rand(20) * 3 + numpy.arange(0, 30, 1.5)
+    if len(sys.argv) < 3:
+        print 'Usage: %s <source stf> <target stf>' % sys.argv[0]
+        sys.exit()
 
-    dtw = DTW(A, B, distance = lambda x, y: abs(x - y), window = 15)
-    C = dtw.align(A)
-    D = dtw.align(B, reverse = True)
+    from stf import STF
+    source, target = STF(), STF()
+    source.loadfile(sys.argv[1])
+    target.loadfile(sys.argv[2])
+
+    from mfcc import MFCC
+    mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency)
+    source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
+    mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency)
+    target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
+
+    dtw = DTW(source_mfcc, target_mfcc, window = abs(source_mfcc.shape[0] - target_mfcc.shape[0]) * 2)
+    warp_mfcc = dtw.align(source_mfcc)
 
     import pylab
-    offset = 5
-    pylab.xlim([-1, max(len(A), len(B)) + 1])
-    pylab.plot(A)
-    pylab.plot(B + offset)
-    pylab.plot(C + offset * 2)
-    pylab.plot(D + offset * 3)
+    pylab.subplot(211)
+    pylab.plot(source_mfcc[:, 0])
+    pylab.plot(target_mfcc[:, 0])
+    pylab.subplot(212)
+    pylab.plot(warp_mfcc[:, 0])
+    pylab.plot(target_mfcc[:, 0])
     pylab.show()
