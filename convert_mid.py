@@ -27,15 +27,7 @@ if __name__ == '__main__':
 
     source = STF()
     source.loadfile(sys.argv[4])
-
-    f0_data = []
-    for i in source.F0:
-        if i == 0:
-            f0_data.append(i)
-        else:
-            f0_data.append(math.e ** ((math.log(i) - f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1]))
-
-    source.F0 = numpy.array(f0_data)
+    source.F0[source.F0 != 0] = numpy.exp((numpy.log(source.F0[source.F0 != 0]) - f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1])
 
     mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency)
     source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])

@@ -43,15 +43,8 @@ if __name__ == '__main__':
     output_mfcc = numpy.array([evgmm.convert(source_data[frame])[0] for frame in xrange(source_data.shape[0])])
     output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) for frame in xrange(output_mfcc.shape[0])])
 
-    f0_data = []
-    for i in source.F0:
-        if i == 0:
-            f0_data.append(i)
-        else:
-            f0_data.append(math.e ** ((math.log(i) - f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1]))
-
-    source.F0 = numpy.array(f0_data)
     source.SPEC = output_spec
+    source.F0[source.F0 != 0] = numpy.exp((numpy.log(source.F0[source.F0 != 0]) - f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1])
 
     if len(sys.argv) == 5:
         source.savefile(sys.argv[4])
