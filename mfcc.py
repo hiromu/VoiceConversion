@@ -66,20 +66,16 @@ class MFCC:
         mspectrum = numpy.log10(numpy.dot(spectrum, self.filterbank.transpose()))
         return scipy.fftpack.dct(mspectrum, norm = 'ortho')[:self.dimension]
 
-    def delta(self, mfcc, frame = 5):
-        assert frame % 2 == 1
-
-        shift = frame / 2
-        x = numpy.array([(1, i) for i in xrange(frame)])
-        mfcc = numpy.concatenate([[mfcc[0]] * shift, mfcc, [mfcc[-1]] * shift])
+    def delta(self, mfcc):
+        mfcc = numpy.concatenate([[mfcc[0]], mfcc, [mfcc[-1]]])
 
         delta = None
-        for i in xrange(shift, mfcc.shape[0] - shift):
-            solution, residuals, rank, s = numpy.linalg.lstsq(x, mfcc[i - shift: i + shift + 1])
+        for i in xrange(1, mfcc.shape[0] - 1):
+            slope = (mfcc[i + 1] - mfcc[i - 1]) / 2
             if delta is None:
-                delta = solution[1]
+                delta = slope
             else:
-                delta = numpy.vstack([delta, solution[1]])
+                delta = numpy.vstack([delta, slope])
 
         return delta
 
