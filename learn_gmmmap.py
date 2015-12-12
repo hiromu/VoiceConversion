@@ -33,18 +33,18 @@ if __name__ == '__main__':
     for i in xrange(len(source_list)):
         print i
 
-        target = STF()
-        target.loadfile(target_list[i])
-
-        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = DIMENSION)
-        target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
-
         source = STF()
         source.loadfile(source_list[i])
 
         mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION)
         source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) for frame in xrange(source.SPEC.shape[0])])
     
+        target = STF()
+        target.loadfile(target_list[i])
+
+        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = DIMENSION)
+        target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) for frame in xrange(target.SPEC.shape[0])])
+
         cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % tuple(map(lambda x: re.sub('[./]', '_', re.sub('^[./]*', '', x)), [source_list[i], target_list[i]])))
         if os.path.exists(cache_path):
             dtw = pickle.load(open(cache_path))
