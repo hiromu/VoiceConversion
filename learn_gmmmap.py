@@ -53,9 +53,9 @@ if __name__ == '__main__':
             with open(cache_path, 'wb') as output:
                 pickle.dump(dtw, output)
 
-        warp_data = dtw.align(source_mfcc)
+        warp_mfcc = dtw.align(source_mfcc)
 
-        data = numpy.hstack([warp_data, target_mfcc])
+        data = numpy.hstack([warp_mfcc, target_mfcc])
         if learn_data is None:
             learn_data = data
         else:

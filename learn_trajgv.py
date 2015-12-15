@@ -74,7 +74,7 @@ if __name__ == '__main__':
     gv_gmm = sklearn.mixture.GMM(n_components = 1, covariance_type = 'full')
     gv_gmm.fit(gv)
 
-    gmmmap = TrajectoryGMMMap(gmm, learn_data.shape[0], gv_gmm)
+    gmmmap = TrajectoryGMMMap(gmm, gv_gmm)
 
     with open(sys.argv[4], 'wb') as output:
         pickle.dump(gmmmap, output)
