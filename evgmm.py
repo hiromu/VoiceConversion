@@ -37,15 +37,18 @@ class EVGMM(object):
             gmm.fit(learn_data[i])
 
             if sv is None:
-                sv = gmm.means_[:, :D].flatten()
+                sv = gmm.means_
             else:
-                sv = np.vstack([sv, gmm.means_[:, :D].flatten()])
+                sv = np.vstack([sv, gmm.means_])
 
-        pca = PCA()
-        pca.fit(sv)
+        source_pca = PCA()
+        source_pca.fit(sv[:, :, :D].reshape((S, M * D)))
 
-        self.eigenvectors = pca.components_.reshape((M, D, S))
-        self.biasvectors = pca.mean_.reshape((M, D))
+        target_pca = PCA()
+        target_pca.fit(sv[:, :, D:].reshape((S, M * D)))
+
+        self.eigenvectors = source_pca.components_.reshape((M, D, S)), target_pca.components_.reshape((M, D, S))
+        self.biasvectors = source_pca.mean_.reshape((M, D)), target_pca.mean_.reshape((M, D))
 
         self.fitted_source = self.source_means
         self.fitted_target = self.target_means
@@ -66,13 +69,14 @@ class EVGMM(object):
 
         for x in xrange(epoch):
             predict = px.predict_proba(np.atleast_2d(source))
-            x = np.sum([predict[:, i: i + 1] * (source - self.biasvectors[i]) for i in xrange(M)], axis = 1)
+            x = np.sum([predict[:, i: i + 1] * (source - self.biasvectors[0][i]) for i in xrange(M)], axis = 1)
+            gamma = np.sum(predict, axis = 0)
 
-            left = np.sum([gamma[i] * np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, self.eigenvectors)[i]) for i in xrange(M)], axis = 0)
-            right = np.sum([np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, x)[i]) for i in xrange(M)], axis = 0)
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[0][i].T, np.linalg.solve(py.covars_, self.eigenvectors[0])[i]) for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[0][i].T, np.linalg.solve(py.covars_, x)[i]) for i in xrange(M)], axis = 0)
             weight = np.linalg.solve(left, right)
 
-            self.fitted_source = np.dot(self.eigenvectors, weight) + self.biasvectors
+            self.fitted_source = np.dot(self.eigenvectors[0], weight) + self.biasvectors[0]
             py.means_ = self.fitted_source
 
     def fit_target(self, target, epoch):
@@ -83,14 +87,14 @@ class EVGMM(object):
 
         for x in xrange(epoch):
             predict = py.predict_proba(np.atleast_2d(target))
-            y = np.sum([predict[:, i: i + 1] * (target - self.biasvectors[i]) for i in xrange(M)], axis = 1)
+            y = np.sum([predict[:, i: i + 1] * (target - self.biasvectors[1][i]) for i in xrange(M)], axis = 1)
             gamma = np.sum(predict, axis = 0)
 
-            left = np.sum([gamma[i] * np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, self.eigenvectors)[i]) for i in xrange(M)], axis = 0)
-            right = np.sum([np.dot(self.eigenvectors[i].T, np.linalg.solve(py.covars_, y)[i]) for i in xrange(M)], axis = 0)
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[1][i].T, np.linalg.solve(py.covars_, self.eigenvectors[1])[i]) for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[1][i].T, np.linalg.solve(py.covars_, y)[i]) for i in xrange(M)], axis = 0)
             weight = np.linalg.solve(left, right)
 
-            self.fitted_target = np.dot(self.eigenvectors, weight) + self.biasvectors
+            self.fitted_target = np.dot(self.eigenvectors[1], weight) + self.biasvectors[1]
             py.means_ = self.fitted_target
 
     def convert(self, source):
