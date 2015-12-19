@@ -27,7 +27,7 @@ class EVGMM(object):
         self.covarYX = initial_gmm.covars_[:, D:, :D]
         self.covarYY = initial_gmm.covars_[:, D:, D:]
 
-        sv = None
+        sv = []
 
         for i in xrange(S):
             gmm = GMM(n_components = M, params = 'm', init_params = '', covariance_type = 'full')
@@ -36,10 +36,9 @@ class EVGMM(object):
             gmm.covars_ = initial_gmm.covars_
             gmm.fit(learn_data[i])
 
-            if sv is None:
-                sv = gmm.means_
-            else:
-                sv = np.vstack([sv, gmm.means_])
+            sv.append(gmm.means_)
+
+        sv = np.array(sv)
 
         source_pca = PCA()
         source_pca.fit(sv[:, :, :D].reshape((S, M * D)))
