@@ -117,11 +117,11 @@ if __name__ == '__main__':
     if len(filter(lambda s: not s.endswith('.stf'), source_list)) == 0:
         target_list = [open(target).read().strip().split('\n') for target in target_list]
         total_data = one_to_many(source_list, target_list, sys.argv[3])
+        evgmm = TrajectoryEVGMM(total_data)
     elif len(filter(lambda s: not s.endswith('.stf'), target_list)) == 0:
         source_list = [open(source).read().strip().split('\n') for source in source_list]
         total_data = many_to_one(source_list, target_list, sys.argv[3])
-
-    evgmm = TrajectoryEVGMM(total_data)
+        evgmm = TrajectoryEVGMM(total_data, True)
 
     with open(sys.argv[4], 'wb') as output:
         pickle.dump(evgmm, output)

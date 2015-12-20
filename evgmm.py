@@ -71,12 +71,12 @@ class EVGMM(object):
             x = np.sum([predict[:, i: i + 1] * (source - self.biasvectors[0][i]) for i in xrange(M)], axis = 1)
             gamma = np.sum(predict, axis = 0)
 
-            left = np.sum([gamma[i] * np.dot(self.eigenvectors[0][i].T, np.linalg.solve(py.covars_, self.eigenvectors[0])[i]) for i in xrange(M)], axis = 0)
-            right = np.sum([np.dot(self.eigenvectors[0][i].T, np.linalg.solve(py.covars_, x)[i]) for i in xrange(M)], axis = 0)
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[0][i].T, np.linalg.solve(px.covars_, self.eigenvectors[0])[i]) for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[0][i].T, np.linalg.solve(px.covars_, x)[i]) for i in xrange(M)], axis = 0)
             weight = np.linalg.solve(left, right)
 
             self.fitted_source = np.dot(self.eigenvectors[0], weight) + self.biasvectors[0]
-            py.means_ = self.fitted_source
+            px.means_ = self.fitted_source
 
     def fit_target(self, target, epoch):
         py = GMM(n_components = M, covariance_type = 'full')
@@ -113,8 +113,8 @@ class EVGMM(object):
         return np.dot(posterior, E)
 
 class TrajectoryEVGMM(EVGMM):
-    def __init__(self, learn_data, gv = None):
-        super(TrajectoryEVGMM, self).__init__(learn_data)
+    def __init__(self, learn_data, swap = False, gv = None):
+        super(TrajectoryEVGMM, self).__init__(learn_data, swap)
 
         self.gv = gv
         if gv != None:
