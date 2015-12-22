@@ -15,7 +15,6 @@ from trajectory import TrajectoryGMMMap
 M = 32
 
 class MRGMM(GMMMap):
-    @profile
     def __init__(self, learn_data, scores, epoch = 1000):
         S, T, D = learn_data.shape
         D /= 2
@@ -114,7 +113,7 @@ class MRGMM(GMMMap):
 
 class TrajectoryMRGMM(MRGMM, TrajectoryGMMMap):
     def __init__(self, learn_data, scores, epoch = 1000):
-        super(MRGMM, self).__init__(learn_data, scores, epoch)
+        super(TrajectoryMRGMM, self).__init__(learn_data, scores, epoch)
 
     def convert(self, source, score = None, *args, **kwargs):
         D = source.shape[0]
