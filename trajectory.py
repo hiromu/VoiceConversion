@@ -42,13 +42,15 @@ class TrajectoryGMMMap(GMMMap):
 
             w0[0:, t * D: (t + 1) * D] = scipy.sparse.diags(np.ones(D), 0)
 
-            tmp = np.zeros(D).fill(-0.5)
+            tmp = np.zeros(D)
+            tmp.fill(-0.5)
             if t == 0:
                 w1[0:, :D] = scipy.sparse.diags(tmp, 0)
             else:
                 w1[0:, (t - 1) * D: t * D] = scipy.sparse.diags(tmp, 0)
 
-            tmp = np.zeros(D).fill(0.5)
+            tmp = np.zeros(D)
+            tmp.fill(0.5)
             if t == T - 1:
                 w1[0:, t * D:] = scipy.sparse.diags(tmp, 0)
             else:
@@ -97,7 +99,7 @@ class TrajectoryGMMMap(GMMMap):
         for t in range(T):
             m = optimum_mix[t]
             D_inv[t] = np.linalg.inv(self.D[m])
-        self.D = scipy.sparse.block_diag(self.D, format = 'csr')
+        D_inv = scipy.sparse.block_diag(D_inv, format = 'csr')
 
         # Compute target static features
         # eq.(39)
